@@ -1,0 +1,16 @@
+<nav class="navbar-nav" style="background-color: rgba(104, 110, 170, 0.599);">
+	{% if user.is_authenticated %}
+		
+		<a class="nav-item nav-link" href="{% url 'todoapp:logout' %}">Выйти</a>
+		{% if request.get_full_path != '/' %}
+			<a href="{% url 'todoapp:index'%}" class="planning">Мой Календарь</a>
+		{% endif %}
+		{% if request.get_full_path != '/general_tasks/' %}
+			<a href="{% url 'todoapp:general-tasks'%}" class="planning">Планировка задач</a>
+		{% endif %}
+		<span style="color: aliceblue;"><b>{{user.username}},</b> удачного дня! 	( ͡° ͜ʖ ͡°)</span>
+	{% else %}
+		<a class="nav-item nav-link" href="{% url 'todoapp:login' %}">Войти</a>
+		<a class="nav-item nav-link" href="{% url 'todoapp:signup' %}">Зарегистрироваться</a>
+	{% endif %}
+</nav>

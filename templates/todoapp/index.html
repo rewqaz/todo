@@ -1,0 +1,278 @@
+{% extends 'todoapp/base.html' %}
+
+{% block content %}
+
+<title>
+    {% block title %}Calendar| ToDoList{% endblock %}
+</title>
+
+<div class="container">
+
+
+	<ul id="tabs" style="background-color: rgba(135, 141, 205, 0.599);">
+		<li class="active" onclick="displayTab({% verbatim %}this{% endverbatim %})">На день</li>
+		<li onclick="displayTab({% verbatim %}this{% endverbatim %})">На неделю</li>
+		<li onclick="displayTab({% verbatim %}this{% endverbatim %})">На месяц</li>
+	</ul>
+	
+	<div id="tabchild">
+		<section id="daily" class="active">
+			<ol class="todoitems">
+			{% for task in daily_task %}
+				<li data-id="{{task.id}}" class="task">
+					<p class="thisTitle">{{task.title}}</p>
+					<p class="taskDate"> - {{task.deadline}}</p>
+					<i class="fa fa-circle unChecked" onclick="toggleCheck({% verbatim %}this{% endverbatim %}, {{task.id}})"></i>
+					<i class="fa fa-check-circle checked" onclick="toggleCheck({% verbatim %}this{% endverbatim %}, {{task.id}})"></i>
+					<i class="fa fa-times delete" onclick="removeTask({% verbatim %}this{% endverbatim %}, {{task.id}})"></i>
+				</li>
+			{% endfor %}
+			{% for item in daily_list %}
+				<li data-id="{{item.id}}" class="item">
+					{% if item.important %}<b>{% endif %}
+					<p class="taskTitle"></p>
+					<p class="itemTitle"> - {{item.title}}</p>
+					<p class="itemDate"> - {{item.date_to_do}}</p>&nbsp<p class="itemTime">{% if item.time_to_do %}{{item.time_to_do}} {% endif %}</p>
+					{% if item.important %}</b>{% endif %}
+					<i class="fa fa-circle unChecked" onclick="toggleCheck({% verbatim %}this{% endverbatim %}, {{item.id}})"></i>
+					<i class="fa fa-check-circle checked" onclick="toggleCheck({% verbatim %}this{% endverbatim %}, {{item.id}})"></i>
+					<i class="fa fa-times delete" onclick="removeItem({% verbatim %}this{% endverbatim %}, {{item.id}})"></i>
+				</li>
+			{% endfor %}
+			</ol>
+		</section>
+		
+		<section id="weekly">
+			<ol class="todoitems">
+			{% for task in weekly_task %}
+				<li data-id="{{task.id}}" class="task">
+					<p class="thisTitle">{{task.title}}</p>
+					<p class="taskDate"> - {{task.deadline}}</p>
+					<i class="fa fa-circle unChecked" onclick="toggleCheck({% verbatim %}this{% endverbatim %}, {{task.id}})"></i>
+					<i class="fa fa-check-circle checked" onclick="toggleCheck({% verbatim %}this{% endverbatim %}, {{task.id}})"></i>
+					<i class="fa fa-times delete" onclick="removeTask({% verbatim %}this{% endverbatim %}, {{task.id}})"></i>
+				</li>
+			{% endfor %}
+			{% for item in weekly_list %}
+				<li data-id="{{item.id}}" class="item">
+					{% if item.important %}<b>{% endif %}
+					<p class="taskTitle"></p>
+					<p class="itemTitle"> - {{item.title}}</p>
+					<p class="itemDate"> - {{item.date_to_do}}</p>&nbsp<p class="itemTime">{% if item.time_to_do %}{{item.time_to_do}} {% endif %}</p>
+					{% if item.important %}</b>{% endif %}
+					<i class="fa fa-circle unChecked" onclick="toggleCheck({% verbatim %}this{% endverbatim %}, {{item.id}})"></i>
+					<i class="fa fa-check-circle checked" onclick="toggleCheck({% verbatim %}this{% endverbatim %}, {{item.id}})"></i>
+					<i class="fa fa-times delete" onclick="removeItem({% verbatim %}this{% endverbatim %}, {{item.id}})"></i>
+				</li>
+			{% endfor %}
+			</ol>
+		</section>
+		
+		<section id="monthly">
+			<ol class="todoitems">
+			{% for task in monthly_task %}
+				<li data-id="{{task.id}}" class="task">
+					<p class="thisTitle">{{task.title}}</p>
+					<p class="taskDate"> - {{task.deadline}}</p>
+					<i class="fa fa-circle unChecked" onclick="toggleCheck({% verbatim %}this{% endverbatim %}, {{task.id}})"></i>
+					<i class="fa fa-check-circle checked" onclick="toggleCheck({% verbatim %}this{% endverbatim %}, {{task.id}})"></i>
+					<i class="fa fa-times delete" onclick="removeTask({% verbatim %}this{% endverbatim %}, {{task.id}})"></i>
+				</li>
+			{% endfor %}
+			{% for item in monthly_list %}
+				<li data-id="{{item.id}}" data-taskId="{{todo.todolist_id}}" class="item">
+					{% if item.important %}<b>{% endif %}
+					<p class="taskTitle"></p>
+					<p class="itemTitle"> - {{item.title}}</p>
+					<p class="itemDate"> - {{item.date_to_do}}</p>&nbsp<p class="itemTime">{% if item.time_to_do %}{{item.time_to_do}} {% endif %}</p>
+					{% if item.important %}</b>{% endif %}
+					<i class="fa fa-circle unChecked" onclick="toggleCheck({% verbatim %}this{% endverbatim %}, {{item.id}})"></i>
+					<i class="fa fa-check-circle checked" onclick="toggleCheck({% verbatim %}this{% endverbatim %}, {{item.id}})"></i>
+					<i class="fa fa-times delete" onclick="removeItem({% verbatim %}this{% endverbatim %}, {{item.id}})"></i>
+				</li>
+			{% endfor %}
+			</ol>
+		</section>
+	</div>
+</div>
+
+{% block javascript %}
+<script>
+
+//To not display a blank section, if it doesn't have any content
+$('section:not(:has(li))').hide();
+
+$( document ).ready(function() {
+	//Run the initItems with "daily" tab
+	initItems(0);
+});
+
+//Display updated version of items on back button
+$(window).bind("pageshow", function(event) {
+    if (event.originalEvent.persisted) {
+        window.location.reload(); 
+    }
+});
+
+
+function displayTab(tab){
+	//Make the tab active
+	$('#tabs li').removeClass('active');
+	$(tab).addClass('active');
+	
+	var index = $(tab).index();
+
+	$('section').removeClass('active');
+	$('section').eq(index).addClass('active');
+	
+	initItems(index);
+	
+}
+
+function initItems(index){
+	// Display list items as line-through or not based on their "done" fields.
+	var listItems = $('section').eq(index).find('ol').children('li');
+	
+	for (let li of listItems) {
+		
+		if($(li).hasClass('item')){
+			$.ajax({
+				url: 'item_is_checked/',
+				data: {
+					'todoid': $(li).attr("data-id")
+				},
+				dataType: 'json',
+          
+				success: function (data) {
+					if(data.is_checked){
+						$(li).addClass('done').removeClass('unDone');
+						$(li).find('p').css({"text-decoration": "line-through"});
+					}else{
+						$(li).addClass('unDone').removeClass('done');
+						$(li).find('p').css({"text-decoration": "none"});
+					}
+				}
+			});
+			//Get the task title of each item and display at the beginning of the line
+			$.ajax({
+				url: 'get_task_title/',
+				data: {
+					'todoid': $(li).attr("data-id")
+				},
+				dataType: 'json',
+          
+				success: function (data) {
+					$(li).find('.taskTitle').html(data.task_title);
+				}
+			});
+		}else{
+			$.ajax({
+				url: 'task_is_checked/',
+				data: {
+					'todoid': $(li).attr("data-id")
+				},
+				dataType: 'json',
+          
+				success: function (data) {
+					if(data.is_checked){
+						$(li).addClass('done').removeClass('unDone');
+						$(li).find('p').css({"text-decoration": "line-through"});
+					}else{
+						$(li).addClass('unDone').removeClass('done');
+						$(li).find('p').css({"text-decoration": "none"});
+					}
+				}
+			});
+		}
+		
+	}
+}
+
+  
+function removeItem(tag, id){
+	var csrftoken = Cookies.get('csrftoken');
+	$.ajax({
+		method: "POST",
+		url: 'remove_item/',
+        data: {
+			'CSRF': csrftoken,
+			'todoid': id
+        },
+        dataType: 'json',
+          
+        success: function (data) {
+			$(tag).parent("li").remove();
+        }
+     });
+}
+
+function removeTask(tag, id){
+	var csrftoken = Cookies.get('csrftoken');
+	$.ajax({
+		method: "POST",
+		url: 'general_tasks/remove_list/',
+        data: {
+			'CSRF': csrftoken,
+			'listid': id
+        },
+        dataType: 'json',
+          
+        success: function (data) {
+			$(tag).parent("li").remove();
+        }
+     });
+}
+	
+	
+function toggleCheck(tag, id){
+	var csrftoken = Cookies.get('csrftoken');	
+	if($(tag).parent('li').hasClass('item')){
+		$.ajax({
+			method: "POST",
+			url: 'item_toggle_check/',
+			data: {
+				'CSRF': csrftoken,
+				'todoid': id
+			},
+			dataType: 'json',
+          
+			success: function (data) {
+				if(data.is_checked){
+					$(tag).parent('li').addClass('done').removeClass('unDone');
+					$(tag).parent('li').find('p').css({"text-decoration": "line-through"});
+				}else{
+					$(tag).parent('li').addClass('unDone').removeClass('done');
+					$(tag).parent('li').find('p').css({"text-decoration": "none"});
+				}
+			}
+		});
+	}else{
+		$.ajax({
+			method: "POST",
+			url: 'task_toggle_check/',
+			data: {
+				'CSRF': csrftoken,
+				'todoid': id
+			},
+			dataType: 'json',
+          
+			success: function (data) {
+				if(data.is_checked){
+					$(tag).parent('li').addClass('done').removeClass('unDone');
+					$(tag).parent('li').find('p').css({"text-decoration": "line-through"});
+				}else{
+					$(tag).parent('li').addClass('unDone').removeClass('done');
+					$(tag).parent('li').find('p').css({"text-decoration": "none"});
+				}
+			}
+		});
+	}
+	
+} 
+
+</script>
+
+{% endblock %}
+
+
+{% endblock %}

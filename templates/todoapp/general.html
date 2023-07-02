@@ -1,0 +1,200 @@
+{% extends 'todoapp/base.html' %}
+
+{% block content %}
+
+<title>
+    {% block title %}General Tasks | ToDoList{% endblock %}
+</title>
+
+<div class="container">
+
+<h1 style="color: rgba(255, 255, 255, 0.943);">Основные Задания</h1>
+<form action="" method="post" id="general">
+	{% csrf_token %}
+	<div class="todoFields">
+		
+			<span>
+				<label for="title">Название</label>
+				<input type="text" id="title" placeholder="Я хочу сделать..." name="title" required>
+			</span>
+			
+			<span>
+				<label for="deadline">Срок выполнения</label>
+				<input type="date" id="deadline" name="deadline" min="new Date().toISOString().split('T')[0]">
+			</span>
+		
+			<button type="submit" name="save" class="addTask"><i></i></button>
+	</div>
+	
+	<h3 style="color: white;">Задания в процессе:</h3>
+	<ul class="todolist">
+		{% for todo in todolist %}
+			{% if not todo.done and todo.user_id == user.id %}
+			<li data-id="{{todo.id}}">
+				<p class="todotitle">{{todo.title}}</p>
+				<span class="date">{{todo.deadline}}</span>
+				
+				<a href="{% url 'todoapp:items' todo.id %}" class="viewItems">Добавить/Посмотреть<br>Задания</a>
+				<p class="fa fa-times delete" onclick="removeList({% verbatim %}this{% endverbatim %}, {{todo.id}})">
+					<span class="tooltiptext">Удалить задание?</span>
+				</i>
+				<i class="fa fa-pencil-alt editList" onclick="startEdit(Изменить{% verbatim %}this{% endverbatim %})">
+					<span class="tooltiptext">Изменить задание</span>
+				</i>
+				<i class="fa fa-arrow-circle-down saveList" onclick="saveEdit({% verbatim %}this{% endverbatim %}, {{todo.id}})"></i>
+				<i class="fa fa-check done" onclick="taskDone({% verbatim %}this{% endverbatim %},{{todo.id}})">
+					<span class="tooltiptext">Задание выполнено?</span>
+				</i>
+			</li>
+			{% endif %}
+		{% endfor %}
+	</ul>
+	
+	<h3 style="color: white;">Законченные задания:</h3>
+	<ul class="doneList">
+		{% for todo in todolist%}
+			{% if todo.done and todo.user_id == user.id  %}
+			<li data-id="{{todo.id}}">
+				<p class="todotitle">{{todo.title}}</p>
+				<div class="date">{{todo.deadline}}</div>
+				<a href="{% url 'todoapp:items' todo.id %}" class="viewItems">Добавить/Посмотреть<br>Задания</a>
+				<i class="fa fa-times delete" onclick="removeList({% verbatim %}this{% endverbatim %}, {{todo.id}})">
+					<span class="tooltiptext">Удалить задание?</span>
+				</i>
+				<i class="fa fa-pencil-alt editList" onclick="startEdit({% verbatim %}this{% endverbatim %})">
+					<span class="tooltiptext">Изменить задание</span>
+				</i>
+				<i class="fa fa-arrow-circle-down saveList" onclick="saveEdit({% verbatim %}this{% endverbatim %}, {{todo.id}})"></i>
+			</li>
+			{% endif %}
+		{% endfor %}
+	</ul>
+	
+<form>
+</div>
+
+{% block javascript %}
+<script>
+
+
+//set the default value and minimum date of deadline to today
+let today = new Date().toISOString().substr(0, 10);
+$("#deadline").val(today);
+$("#deadline").attr('min',today);
+
+
+//Display updated version of todolist on back button
+$(window).bind("pageshow", function(event) {
+    if (event.originalEvent.persisted) {
+        window.location.reload(); 
+    }
+});
+
+displayTooltip();
+
+function removeList(tag, id){
+	
+	var csrftoken = Cookies.get('csrftoken');
+	$.ajax({
+		method: "POST",
+		url: 'remove_list/',
+        data: {
+			'CSRF': csrftoken,
+			'listid': id
+        },
+        dataType: 'json',
+          
+        success: function (data) {
+			$(tag).parent("li").remove();
+        }
+    });
+}
+
+
+function startEdit(tag){
+        
+        var title = $(tag).siblings('.todotitle').text();
+		var deadline =  $(tag).siblings('.date').text(); 
+        
+		$(tag).siblings('.saveList').addClass('active');
+
+        var titleTag = '<input type="text" value= "' + title +'" class="titleTag"/>'
+        $(tag).siblings('.todotitle').html(titleTag);
+		
+		var dateTag = '<input type="date" value= "' + deadline +'" class="dateTag"/>'
+		$(tag).siblings('.date').html(dateTag);
+
+        $("ul input").click(function (e) {
+            e.stopPropagation();
+        });
+    }
+
+    $("ul .saveList").click(function (e) {
+        e.stopPropagation();
+    });
+
+	
+function saveEdit(tag, id) {
+	var csrftoken = Cookies.get('csrftoken');
+	var titleValue = $(tag).siblings('.todotitle').find('.titleTag').val();
+	var dateValue = $(tag).siblings('.date').find('.dateTag').val();
+		$.ajax({
+			method: "POST",
+			url: 'edit_list/',
+        data: {
+			'CSRF': csrftoken,
+			'listId': id,
+			'titleValue': titleValue,
+			'dateValue': dateValue
+        },
+        dataType: 'json',
+          
+        success: function (data) {
+			$(tag).siblings('.todotitle').html(titleValue);
+			$(tag).siblings('.date').html(data.new_date);
+			$(tag).removeClass('active');
+			displayTooltip();
+        }
+    });
+}
+
+//Make the task and its items marked as done
+function taskDone(tag, taskId){
+	
+	var taskTitle = $(tag).siblings('.todotitle').html();
+	var taskDeadline = $(tag).siblings('.date').html();
+	var csrftoken = Cookies.get('csrftoken');
+	$.ajax({
+			method: "POST",
+			url: 'task_done/',
+        data: {
+			'CSRF': csrftoken,
+			'taskId': taskId
+        },
+        dataType: 'json',
+          
+        success: function (data) {
+			$(tag).parent('li').remove();
+			newTag = '<li data-id="'+taskId+'"><p class="todotitle">'+taskTitle+'</p><div class="date">'+taskDeadline+'</div><a href="/'+taskId+'" class="viewItems">View<br>Task Items</a><i class="fa fa-times delete" onclick="removeList('+{% verbatim %}this{% endverbatim %}+','+ taskId+')"></i><i class="fa fa-pencil-alt editList" onclick="startEdit('+{% verbatim %}this{% endverbatim %}+')"></i><i class="fa fa-check saveList" onclick="saveEdit('+{% verbatim %}this{% endverbatim %}, taskId+')"></i></li>';
+$('.doneList').append(newTag);
+        }
+    });
+}
+
+function displayTooltip(){
+    $('.todotitle').each(function(i) {
+         if (isEllipsisActive(this))
+            $(this).attr("title", $(this).text());
+		else
+			$(this).removeAttr("title");
+    });
+}
+
+function isEllipsisActive(e) {
+     return (e.offsetWidth < e.scrollWidth);
+}
+
+</script>
+
+{% endblock %}
+{% endblock %}
